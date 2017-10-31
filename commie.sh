@@ -2,7 +2,7 @@
 
 remotedir=commie
 
-while getopts ":s:p:c:" opt; do
+while getopts ":s:p:c:n" opt; do
   case $opt in
     s)
       server=$OPTARG
@@ -12,6 +12,9 @@ while getopts ":s:p:c:" opt; do
       ;;
     c)
       cmd=$OPTARG
+      ;;
+    n)
+      noscreen="true"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -74,8 +77,15 @@ echo "$files" | rsync -av --files-from=- / $server:$remotedir
 if [ -n "$cmd" ]
 then
   # Run remote command
-  ssh -t $server \
-    "cd $remotedir$projdir &&" \
-    "screen -L sh -c $(printf "%q" "$cmd") &&" \
-    "less +G screenlog.0"
+  if [ -z "$noscreen" ]
+  then
+    ssh -t $server \
+      "cd $remotedir$projdir &&" \
+      "screen -L sh -c $(printf "%q" "$cmd") &&" \
+      "less +G screenlog.0"
+  else
+    ssh -t $server \
+      "cd $remotedir$projdir &&" \
+      "sh -c $(printf "%q" "$cmd")"
+  fi
 fi
